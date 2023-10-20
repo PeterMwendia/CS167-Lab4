@@ -36,4 +36,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
-**.tsv
+nasa_19950801.tsv
+nasa_19950630.22-19950728.12.tsv
