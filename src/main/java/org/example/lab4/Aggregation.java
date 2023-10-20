@@ -1,6 +1,5 @@
 package org.example.lab4;
 
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -15,7 +14,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
 
-
 public class Aggregation {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
@@ -29,14 +27,13 @@ public class Aggregation {
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
         job.setInputFormatClass(TextInputFormat.class);
-        job.setNumReduceTasks(2);
+        job.setNumReduceTasks(2);  // Set the number of reducers
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 
-    public static class TokenizerMapper extends
-            Mapper<LongWritable, Text, IntWritable, IntWritable> {
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, IntWritable, IntWritable> {
 
         private final IntWritable outKey = new IntWritable();
         private final IntWritable outVal = new IntWritable();
@@ -48,19 +45,24 @@ public class Aggregation {
             String[] parts = value.toString().split("\t");
             int responseCode = Integer.parseInt(parts[5]);
             int bytes = Integer.parseInt(parts[6]);
-            // TODO write <responseCode, bytes> to the output
+            outKey.set(responseCode);
+            outVal.set(bytes);
+            context.write(outKey, outVal);
         }
     }
 
-    public static class IntSumReducer extends
-            Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
+    public static class IntSumReducer extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
 
         private final IntWritable result = new IntWritable();
 
-        public void reduce(IntWritable key, Iterable<IntWritable> values,
-                           Context context)
+        public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
-            // TODO write <key, sum(values)> to the output
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            result.set(sum);
+            context.write(key, result);
         }
     }
 }
